@@ -47,9 +47,7 @@
 
     <script>
         const PASSWORD_ADMIN = "2026*Principios";
-        // Credenciales inyectadas mediante variables de entorno en compilación
-        const JSONBIN_MASTER_KEY = "__JSONBIN_MASTER_KEY__";
-        const JSONBIN_INDICE_ID = "__JSONBIN_INDICE_ID__"; 
+        const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
 
         let registrosGlobales = [];
 
@@ -64,26 +62,35 @@
             }
         }
 
+        async function llamarBackend(action, binId = null) {
+            try {
+                const response = await fetch('/.netlify/functions/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, binId })
+                });
+                return await response.json();
+            } catch (e) {
+                console.error("Error en comunicación segura:", e);
+                return null;
+            }
+        }
+
         async function cargarDatos() {
             const tbody = document.getElementById('tabla-solicitudes');
             tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Cargando registros desde la nube...</td></tr>`;
 
             try {
-                const indiceRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_INDICE_ID}/latest`, {
-                    headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
-                });
-                const indiceData = await indiceRes.json();
-                const listaIds = indiceData.record?.sessiones || [];
+                // Obtener el índice mediante la función segura
+                const indiceData = await llamarBackend('get', JSONBIN_INDICE_ID);
+                const listaIds = indiceData?.record?.sessiones || [];
 
                 registrosGlobales = [];
 
                 for (let binId of listaIds) {
                     try {
-                        const binRes = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                            headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
-                        });
-                        const binData = await binRes.json();
-                        const record = binData.record;
+                        const binData = await llamarBackend('get', binId);
+                        const record = binData?.record;
 
                         if (record && record.appTag === "TortillasAGranelCanciones") {
                             registrosGlobales.push(record);
@@ -129,7 +136,7 @@
 
             } catch (error) {
                 console.error("Error al cargar panel:", error);
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error al conectar con JSONBin. Verifica tu Master Key.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error al conectar con la función segura.</td></tr>`;
             }
         }
 

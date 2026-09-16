@@ -29,12 +29,12 @@
         const userInput = document.getElementById('user-input');
         const chatFooter = document.getElementById('chat-footer');
 
-        // Credenciales inyectadas mediante variables de entorno en compilación
-        const JSONBIN_MASTER_KEY = "__JSONBIN_MASTER_KEY__"; 
-        const JSONBIN_INDICE_ID = "__JSONBIN_INDICE_ID__"; 
+        // Ya no se requiere la Master Key en el frontend; se gestiona de forma segura en Netlify Functions.
+        const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
         let currentBinId = null; 
 
-        const GEMINI_API_KEY = "__GEMINI_API_KEY__";
+        // La API Key de Gemini se protege en Google Cloud restringiéndola por dominio (HTTP Referrer)
+        const GEMINI_API_KEY = "AQ.Ab8RN6LNp2U7oJDbGzaadSAMkqBZBjjXUP-mj8OWTDNVpo3Jcw";
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         let sessionState = {
@@ -64,6 +64,21 @@ Sigue estrictamente este orden conversacional:
 
         let geminiHistory = [];
 
+        // Función puente segura hacia Netlify Functions
+        async function llamarBackend(action, binId = null, data = null, binName = null) {
+            try {
+                const response = await fetch('/.netlify/functions/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, binId, data, binName })
+                });
+                return await response.json();
+            } catch (e) {
+                console.error("Error en comunicación segura:", e);
+                return null;
+            }
+        }
+
         function appendMessage(sender, htmlText) {
             const div = document.createElement('div');
             div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -77,35 +92,19 @@ Sigue estrictamente este orden conversacional:
 
         async function crearBinIndependienteYActualizarIndice() {
             try {
-                const response = await fetch("https://api.jsonbin.io/v3/b", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Master-Key": JSONBIN_MASTER_KEY,
-                        "X-Bin-Name": sessionState.sessionId
-                    },
-                    body: JSON.stringify(sessionState)
-                });
-                const data = await response.json();
-                if (data && data.metadata && data.metadata.id) {
-                    currentBinId = data.metadata.id;
+                // 1. Crear Bin exclusivo de sesión mediante la función segura
+                const resCreate = await llamarBackend('create', null, sessionState, sessionState.sessionId);
+                if (resCreate && resCreate.metadata && resCreate.metadata.id) {
+                    currentBinId = resCreate.metadata.id;
 
-                    const indiceRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_INDICE_ID}/latest`, {
-                        headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
-                    });
-                    const indiceData = await indiceRes.json();
-                    let listaSessiones = indiceData.record?.sessiones || [];
+                    // 2. Leer el índice central
+                    const resIndiceGet = await llamarBackend('get', JSONBIN_INDICE_ID);
+                    let listaSessiones = resIndiceGet.record?.sessiones || [];
                     
+                    // 3. Actualizar el índice central de forma segura
                     if (!listaSessiones.includes(currentBinId)) {
                         listaSessiones.push(currentBinId);
-                        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_INDICE_ID}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-Master-Key': JSONBIN_MASTER_KEY
-                            },
-                            body: JSON.stringify({ sessiones: listaSessiones })
-                        });
+                        await llamarBackend('update', JSONBIN_INDICE_ID, { sessiones: listaSessiones });
                     }
                 }
             } catch (e) {
@@ -115,18 +114,7 @@ Sigue estrictamente este orden conversacional:
 
         async function sincronizarConJSONBin() {
             if (!currentBinId) return;
-            try {
-                await fetch(`https://api.jsonbin.io/v3/b/${currentBinId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_MASTER_KEY
-                    },
-                    body: JSON.stringify(sessionState)
-                });
-            } catch (e) {
-                console.error("Error sincronizando sesión:", e);
-            }
+            await llamarBackend('update', currentBinId, sessionState);
         }
 
         async function extraerDatosEstructuradosYFinalizar() {
