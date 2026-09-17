@@ -6,7 +6,7 @@
     <title>Crea tu Canción Personalizada</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 h-[100dvh] flex flex-col overflow-hidden">
+<body class="bg-slate-50 h-screen flex flex-col justify-between">
     <header class="bg-indigo-900 text-white p-3 flex justify-between items-center shadow-md">
         <h1 class="text-lg font-bold">🎶 Tu Canción Personalizada</h1>
         <a href="admin.html" class="text-xs text-indigo-200 hover:text-white underline">Panel Admin</a>
@@ -32,8 +32,8 @@
         const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
         let currentBinId = null; 
 
-        const G_API_KEY = "__CLAVE_GEMINI__";
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${G_API_KEY}`;
+        const GEMINI_API_KEY = "AQ.Ab8RN6LNp2U7oJDbGzaadSAMkqBZBjjXUP-mj8OWTDNVpo3Jcw";
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         let sessionState = {
             appTag: "TortillasAGranelCanciones",
@@ -57,7 +57,7 @@ Sigue estrictamente este orden conversacional:
 2. Dinámica obligatoria: Tras su respuesta, preséntale la información de los 3 pasos, la inversión de ¢9,900 colones y la garantía de riesgo cero. Luego pregunta: ¿Tienes un texto completo para la canción o prefieres que armemos la letra juntos a partir de las ideas e historia que nos cuentes?
 3. Manejo de la letra o ideas: Si da ideas o cuenta su historia, agradécele reconociendo el detalle y pregúntale si desea agregar algo más.
 4. Armado y revisión de letra: Cuando indique que terminó, preséntale una propuesta formal estructurada con etiquetas <b>[Verso 1]</b>, <b>[Coro]</b>, etc., y pregúntale si está satisfecho o desea cambios hasta que la apruebe.
-5. Estilo musical: Una vez aprobada la letra, pregúntale por el ritmo usando exactamente esta indicación: "por ejemplo cumbia, merengue, rock, pop, religiosa, etc, el que gustes".
+5. Estilo musical: Una vez aprobada la letra, pregúntale por el ritmo usando exactamente esta indicación: "por ejemplo cumbia, merengue, rock, pop, religiosa, etc., el que gustes".
 6. Cierre y Datos: Pídele amablemente su <b>nombre</b> y su número de <b>teléfono</b>. Cuando te los proporcione, emite tu mensaje de agradecimiento y confirmación de que se le enviará la muestra.`;
 
         let geminiHistory = [];
@@ -87,12 +87,41 @@ Sigue estrictamente este orden conversacional:
             sincronizarConJSONBin();
         }
 
+        // Función para mostrar botones interactivos que rompen el hielo
+        function mostrarOpcionesRapidas(opciones) {
+            const div = document.createElement('div');
+            div.id = "quick-replies";
+            div.className = "flex flex-wrap gap-2 my-2 justify-start";
+            
+            opciones.forEach(opcion => {
+                const btn = document.createElement('button');
+                btn.className = "bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-3 py-1.5 rounded-full hover:bg-indigo-600 hover:text-white transition font-medium shadow-sm cursor-pointer";
+                btn.innerText = opcion;
+                btn.onclick = () => {
+                    const quickDiv = document.getElementById('quick-replies');
+                    if (quickDiv) quickDiv.remove(); // Borra los botones al elegir
+
+                    let textoAElegir = opcion;
+                    if (opcion.includes("Otro")) {
+                        userInput.focus();
+                        return; // Si elige "Otro", solo enfoca el input para que escriba libremente
+                    }
+
+                    userInput.value = textoAElegir.replace(/^[🎂❤️🎸✨💬]\s*/, '');
+                    chatForm.dispatchEvent(new Event('submit')); // Envía automáticamente
+                };
+                div.appendChild(btn);
+            });
+            
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
         async function crearBinIndependienteYActualizarIndice() {
             try {
                 const resCreate = await llamarBackend('create', null, sessionState, sessionState.sessionId);
                 if (resCreate && resCreate.metadata && resCreate.metadata.id) {
                     currentBinId = resCreate.metadata.id;
-
                     const resIndiceGet = await llamarBackend('get', JSONBIN_INDICE_ID);
                     let listaSessiones = resIndiceGet.record?.sessiones || [];
                     
@@ -151,10 +180,19 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
         }
 
         window.addEventListener('load', async () => {
-            // Ya no se crea el bin al cargar la página para evitar registros basura de bots
-            const saludoInicial = "¡Hola! 👋🎵<br><br>Para ayudarte mejor, ¿la canción es para alguna ocasión especial (un cumpleaños, aniversario, regalo) o es un proyecto propio?";
+            await crearBinIndependienteYActualizarIndice();
+
+            const saludoInicial = "¡Hola! 👋🎵<br><br>Bienvenido a nuestro creador de canciones personalizadas. Para empezar a darle forma a tu idea, cuéntame: ¿La canción es para alguna ocasión especial o es un proyecto propio?";
             appendMessage('bot', saludoInicial);
             
+            // Inyectamos opciones interactivas para romper el hielo de inmediato
+            mostrarOpcionesRapidas([
+                "🎂 Es para un cumpleaños",
+                "❤️ Es un regalo de aniversario",
+                "🎸 Es un proyecto musical",
+                "💬 Otro (escribir mi caso)"
+            ]);
+
             geminiHistory.push({
                 role: "user",
                 parts: [{ text: "Instrucción del Sistema: " + SYSTEM_PROMPT + "\n\nInicia la conversación saludando al usuario." }]
@@ -172,10 +210,9 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
             const text = userInput.value.trim();
             if (!text) return;
 
-            // Si es el primer mensaje real del usuario, creamos el Bin en este momento
-            if (!currentBinId) {
-                await crearBinIndependienteYActualizarIndice();
-            }
+            // Si aún hay botones flotando y el usuario escribe por su cuenta, los removemos
+            const quickDiv = document.getElementById('quick-replies');
+            if (quickDiv) quickDiv.remove();
 
             appendMessage('user', text);
             userInput.value = '';
