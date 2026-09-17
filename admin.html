@@ -3,71 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crea tu Canción Personalizada</title>
+    <title>Panel de Administración - Solicitudes</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 h-screen flex flex-col justify-between">
-    <header class="bg-indigo-900 text-white p-3 flex justify-between items-center shadow-md">
-        <h1 class="text-lg font-bold">🎶 Tu Canción Personalizada</h1>
-        <a href="admin.html" class="text-xs text-indigo-200 hover:text-white underline">Panel Admin</a>
-    </header>
+<body class="bg-slate-100 p-6">
+    <div id="auth-screen" class="max-w-md mx-auto mt-20 bg-white shadow-lg rounded-xl p-6 text-center">
+        <h2 class="text-xl font-bold text-slate-800 mb-4">🔐 Acceso Administrativo</h2>
+        <input type="password" id="input-password" placeholder="Ingresa la contraseña" class="w-full border rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="verificarPassword()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">Entrar al Panel</button>
+        <p id="error-msg" class="text-xs text-red-500 mt-2 hidden">Contraseña incorrecta.</p>
+    </div>
 
-    <main id="chat-container" class="flex-1 overflow-y-auto p-4 max-w-xl w-full mx-auto space-y-3">
-        <!-- Los mensajes se inyectan aquí -->
-    </main>
+    <div id="admin-panel" class="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-800">📊 Solicitudes y Sesiones de Canciones</h1>
+            <div class="space-x-2">
+                <button onclick="cargarDatos()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">🔄 Actualizar</button>
+                <button onclick="exportarCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-700 transition">📥 Exportar a CSV</button>
+            </div>
+        </div>
 
-    <footer id="chat-footer" class="bg-white border-t p-3 max-w-xl w-full mx-auto">
-        <form id="chat-form" class="flex gap-2">
-            <input type="text" id="user-input" placeholder="Escribe aquí..." class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" autocomplete="off" required>
-            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">Enviar</button>
-        </form>
-    </footer>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-200 text-slate-700 text-xs uppercase">
+                    <tr>
+                        <th class="p-3">Fecha</th>
+                        <th class="p-3">Estado</th>
+                        <th class="p-3">Nombre</th>
+                        <th class="p-3">Teléfono</th>
+                        <th class="p-3">Estilo Musical</th>
+                        <th class="p-3">Letra / Progreso</th>
+                        <th class="p-3 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-solicitudes" class="divide-y divide-slate-200 text-sm">
+                    <tr>
+                        <td colspan="7" class="p-4 text-center text-slate-500">Cargando registros...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
-        const chatContainer = document.getElementById('chat-container');
-        const chatForm = document.getElementById('chat-form');
-        const userInput = document.getElementById('user-input');
-        const chatFooter = document.getElementById('chat-footer');
-
+        const PASSWORD_ADMIN = "2026*Principios";
         const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
-        let currentBinId = null; 
 
-        const GEMINI_API_KEY = "AQ.Ab8RN6LNp2U7oJDbGzaadSAMkqBZBjjXUP-mj8OWTDNVpo3Jcw";
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;
+        let registrosGlobales = [];
 
-        let sessionState = {
-            appTag: "TortillasAGranelCanciones",
-            sessionId: 'sesion_' + Date.now(),
-            timestamp: new Date().toISOString(),
-            status: 'Activo',
-            nombreCliente: '',
-            telefono: '',
-            estiloMusical: '',
-            letraFinal: '',
-            historialConversacion: []
-        };
+        function verificarPassword() {
+            const pass = document.getElementById('input-password').value;
+            if (pass === PASSWORD_ADMIN) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('admin-panel').classList.remove('hidden');
+                cargarDatos();
+            } else {
+                document.getElementById('error-msg').classList.remove('hidden');
+            }
+        }
 
-        let faseActual = 'INICIO';
-
-        const SYSTEM_PROMPT = `Eres el asistente virtual experto, cálido y empático de un servicio de canciones personalizadas. 
-REGLA DE FORMATO ESTRICTA: NUNCA uses asteriscos dobles (**) para negritas. Utiliza siempre etiquetas HTML puras como <b>texto</b> para resaltar y <br> para saltos de línea.
-
-Sigue estrictamente este orden conversacional:
-1. Saludo inicial: Saluda amablemente y pregunta si la canción es para alguna ocasión especial o un proyecto propio.
-2. Dinámica obligatoria: Tras su respuesta, preséntale la información de los 3 pasos, la inversión de ¢9,900 colones y la garantía de riesgo cero. Luego pregunta: ¿Tienes un texto completo para la canción o prefieres que armemos la letra juntos a partir de las ideas e historia que nos cuentes?
-3. Manejo de la letra o ideas: Si da ideas o cuenta su historia, agradécele reconociendo el detalle y pregúntale si desea agregar algo más.
-4. Armado y revisión de letra: Cuando indique que terminó, preséntale una propuesta formal estructurada con etiquetas <b>[Verso 1]</b>, <b>[Coro]</b>, etc., y pregúntale si está satisfecho o desea cambios hasta que la apruebe.
-5. Estilo musical: Una vez aprobada la letra, pregúntale por el ritmo usando exactamente esta indicación: "por ejemplo cumbia, merengue, rock, pop, religiosa, etc., el que gustes".
-6. Cierre y Datos: Pídele amablemente su <b>nombre</b> y su número de <b>teléfono</b>. Cuando te los proporcione, emite tu mensaje de agradecimiento y confirmación de que se le enviará la muestra.`;
-
-        let geminiHistory = [];
-
-        async function llamarBackend(action, binId = null, data = null, binName = null) {
+        async function llamarBackend(action, binId = null) {
             try {
                 const response = await fetch('/.netlify/functions/api', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, binId, data, binName })
+                    body: JSON.stringify({ action, binId })
                 });
                 return await response.json();
             } catch (e) {
@@ -76,210 +76,126 @@ Sigue estrictamente este orden conversacional:
             }
         }
 
-        function appendMessage(sender, htmlText) {
-            const div = document.createElement('div');
-            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-            div.innerHTML = `<div class="max-w-xs md:max-w-sm rounded-2xl px-3.5 py-2 text-sm ${sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-200 text-slate-800 rounded-bl-none'}">${htmlText}</div>`;
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            sessionState.historialConversacion.push({ remitente: sender, mensaje: htmlText });
-            sincronizarConJSONBin();
-        }
+        async function cargarDatos() {
+            const tbody = document.getElementById('tabla-solicitudes');
+            tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Cargando registros desde la nube...</td></tr>`;
 
-        // Función para mostrar botones interactivos que rompen el hielo
-        function mostrarOpcionesRapidas(opciones) {
-            const div = document.createElement('div');
-            div.id = "quick-replies";
-            div.className = "flex flex-wrap gap-2 my-2 justify-start";
-            
-            opciones.forEach(opcion => {
-                const btn = document.createElement('button');
-                btn.className = "bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-3 py-1.5 rounded-full hover:bg-indigo-600 hover:text-white transition font-medium shadow-sm cursor-pointer";
-                btn.innerText = opcion;
-                btn.onclick = () => {
-                    const quickDiv = document.getElementById('quick-replies');
-                    if (quickDiv) quickDiv.remove(); // Borra los botones al elegir
-
-                    let textoAElegir = opcion;
-                    if (opcion.includes("Otro")) {
-                        userInput.focus();
-                        return; // Si elige "Otro", solo enfoca el input para que escriba libremente
-                    }
-
-                    userInput.value = textoAElegir.replace(/^[🎂❤️🎸✨💬]\s*/, '');
-                    chatForm.dispatchEvent(new Event('submit')); // Envía automáticamente
-                };
-                div.appendChild(btn);
-            });
-            
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        async function crearBinIndependienteYActualizarIndice() {
             try {
-                const resCreate = await llamarBackend('create', null, sessionState, sessionState.sessionId);
-                if (resCreate && resCreate.metadata && resCreate.metadata.id) {
-                    currentBinId = resCreate.metadata.id;
-                    const resIndiceGet = await llamarBackend('get', JSONBIN_INDICE_ID);
-                    let listaSessiones = resIndiceGet.record?.sessiones || [];
-                    
-                    if (!listaSessiones.includes(currentBinId)) {
-                        listaSessiones.push(currentBinId);
-                        await llamarBackend('update', JSONBIN_INDICE_ID, { sessiones: listaSessiones });
+                const indiceData = await llamarBackend('get', JSONBIN_INDICE_ID);
+                const listaIds = indiceData?.record?.sessiones || [];
+
+                registrosGlobales = [];
+
+                for (let binId of listaIds) {
+                    try {
+                        const binData = await llamarBackend('get', binId);
+                        const record = binData?.record;
+
+                        if (record && record.appTag === "TortillasAGranelCanciones") {
+                            registrosGlobales.push(record);
+                        }
+                    } catch (err) {
+                        console.error(`Error leyendo sesión ${binId}:`, err);
                     }
                 }
-            } catch (e) {
-                console.error("Error registrando la sesión:", e);
-            }
-        }
 
-        async function sincronizarConJSONBin() {
-            if (!currentBinId) return;
-            await llamarBackend('update', currentBinId, sessionState);
-        }
-
-        async function extraerDatosEstructuradosYFinalizar() {
-            const promptExtraccion = `Analiza detalladamente todo el historial de esta conversación y extrae estrictamente en formato JSON plano (sin bloques de código markdown, solo el objeto JSON) las siguientes 4 variables:
-{
-  "nombreCliente": "el nombre del cliente mencionado",
-  "telefono": "el número de teléfono proporcionado",
-  "estiloMusical": "el estilo musical elegido",
-  "letraFinal": "la letra completa aprobada"
-}
-
-Historial:
-${JSON.stringify(sessionState.historialConversacion)}`;
-
-            try {
-                const response = await fetch(GEMINI_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{ role: "user", parts: [{ text: promptExtraccion }] }]
-                    })
-                });
-                const data = await response.json();
-                if (data.candidates && data.candidates[0].content) {
-                    let textoRespuesta = data.candidates[0].content.parts[0].text;
-                    textoRespuesta = textoRespuesta.replace(/```json/g, '').replace(/```/g, '').trim();
-                    const datosExtraidos = JSON.parse(textoRespuesta);
-                    
-                    sessionState.nombreCliente = datosExtraidos.nombreCliente || sessionState.nombreCliente;
-                    sessionState.telefono = datosExtraidos.telefono || sessionState.telefono;
-                    sessionState.estiloMusical = datosExtraidos.estiloMusical || sessionState.estiloMusical;
-                    sessionState.letraFinal = datosExtraidos.letraFinal || sessionState.letraFinal;
-                    sessionState.status = "Completado";
-                    
-                    await sincronizarConJSONBin();
+                tbody.innerHTML = '';
+                if (registrosGlobales.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">No hay registros todavía.</td></tr>`;
+                    return;
                 }
-            } catch (e) {
-                console.error("Error extrayendo datos con IA:", e);
-            }
-        }
 
-        window.addEventListener('load', async () => {
-            await crearBinIndependienteYActualizarIndice();
+                registrosGlobales.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            const saludoInicial = "¡Hola! 👋🎵<br><br>Bienvenido a nuestro creador de canciones personalizadas. Para empezar a darle forma a tu idea, cuéntame: ¿La canción es para alguna ocasión especial o es un proyecto propio?";
-            appendMessage('bot', saludoInicial);
-            
-            // Inyectamos opciones interactivas para romper el hielo de inmediato
-            mostrarOpcionesRapidas([
-                "🎂 Es para un cumpleaños",
-                "❤️ Es un regalo de aniversario",
-                "🎸 Es un proyecto musical",
-                "💬 Otro (escribir mi caso)"
-            ]);
+                registrosGlobales.forEach((reg) => {
+                    const esCompletado = reg.status === 'Completado' || (reg.telefono && reg.estiloMusical);
+                    const tr = document.createElement('tr');
+                    
+                    let infoProgreso = 'Sin definir';
+                    if (reg.letraFinal) {
+                        infoProgreso = reg.letraFinal.replace(/<br>/g, ' ');
+                    } else if (reg.historialConversacion && reg.historialConversacion.length > 0) {
+                        const ultimoUser = reg.historialConversacion.slice().reverse().find(h => h.remitente === 'user');
+                        infoProgreso = `[En curso] Último mensaje: "${ultimoUser ? ultimoUser.mensaje : '...'}"`;
+                    }
 
-            geminiHistory.push({
-                role: "user",
-                parts: [{ text: "Instrucción del Sistema: " + SYSTEM_PROMPT + "\n\nInicia la conversación saludando al usuario." }]
-            });
-            geminiHistory.push({
-                role: "model",
-                parts: [{ text: saludoInicial }]
-            });
-        });
-
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (faseActual === 'FINALIZADO') return;
-
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            // Si aún hay botones flotando y el usuario escribe por su cuenta, los removemos
-            const quickDiv = document.getElementById('quick-replies');
-            if (quickDiv) quickDiv.remove();
-
-            appendMessage('user', text);
-            userInput.value = '';
-
-            geminiHistory.push({
-                role: "user",
-                parts: [{ text: text }]
-            });
-
-            const esPasoContacto = text.length >= 5 && /\d/.test(text) && (text.includes(' ') || text.includes(','));
-
-            if (esPasoContacto) {
-                faseActual = 'FINALIZADO';
-            }
-
-            await enviarAGemini(esPasoContacto);
-        });
-
-        async function enviarAGemini(esCierre) {
-            const typingId = 'typing-' + Date.now();
-            const typingDiv = document.createElement('div');
-            typingDiv.id = typingId;
-            typingDiv.className = "flex justify-start";
-            typingDiv.innerHTML = `<div class="bg-slate-200 text-slate-500 rounded-2xl px-3.5 py-2 text-xs italic">Escribiendo...</div>`;
-            chatContainer.appendChild(typingDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-
-            try {
-                const response = await fetch(GEMINI_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: geminiHistory })
+                    tr.innerHTML = `
+                        <td class="p-3">${reg.timestamp ? new Date(reg.timestamp).toLocaleDateString() + ' ' + new Date(reg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/D'}</td>
+                        <td class="p-3 font-semibold ${esCompletado ? 'text-green-600' : 'text-amber-600'}">${esCompletado ? 'Completado' : 'En proceso'}</td>
+                        <td class="p-3">${reg.nombreCliente || 'No indicado'}</td>
+                        <td class="p-3">${reg.telefono || 'No indicado'}</td>
+                        <td class="p-3">${reg.estiloMusical || 'No indicado'}</td>
+                        <td class="p-3 truncate max-w-xs" title="${infoProgreso.replace(/"/g, '&quot;')}">${infoProgreso}</td>
+                        <td class="p-3 text-center">
+                            <button onclick='verConversacion(${JSON.stringify(reg.historialConversacion || [])})' class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700 transition">💬 Ver Chat</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
 
-                const data = await response.json();
-                document.getElementById(typingId).remove();
-
-                if (data.candidates && data.candidates[0].content) {
-                    let respuestaTexto = data.candidates[0].content.parts[0].text;
-                    respuestaTexto = respuestaTexto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-                    respuestaTexto = respuestaTexto.replace(/\n/g, '<br>');
-                    
-                    appendMessage('bot', respuestaTexto);
-                    
-                    geminiHistory.push({
-                        role: "model",
-                        parts: [{ text: respuestaTexto }]
-                    });
-
-                    if (esCierre || faseActual === 'FINALIZADO') {
-                        faseActual = 'FINALIZADO';
-                        await extraerDatosEstructuradosYFinalizar();
-                        
-                        chatFooter.innerHTML = `<div class="text-center text-xs text-emerald-700 font-bold py-2">✅ Solicitud enviada correctamente. ¡Muchas gracias!</div>`;
-                        setTimeout(() => {
-                            alert("¡Solicitud enviada con éxito! Nos pondremos en contacto contigo pronto.");
-                        }, 400);
-                    }
-
-                } else {
-                    appendMessage('bot', 'Disculpa, ocurrió un pequeño error procesando tu mensaje. ¿Podrías repetirlo?');
-                }
             } catch (error) {
-                document.getElementById(typingId).remove();
-                console.error("Error conectando con Gemini API:", error);
-                appendMessage('bot', '¡Entendido! Continuemos con tu canción. ¿Qué más te gustaría agregar?');
+                console.error("Error al cargar panel:", error);
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500">Error al conectar con la función segura.</td></tr>`;
             }
+        }
+
+        function exportarCSV() {
+            if (!registrosGlobales.length) {
+                alert("No hay registros para exportar.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,SessionID,Fecha,Estado,Nombre,Telefono,EstiloMusical,LetraFinal\n";
+
+            registrosGlobales.forEach(reg => {
+                let fila = [
+                    reg.sessionId || '',
+                    reg.timestamp || '',
+                    reg.status || 'Activo',
+                    `"${reg.nombreCliente || ''}"`,
+                    `"${reg.telefono || ''}"`,
+                    `"${reg.estiloMusical || ''}"`,
+                    `"${(reg.letraFinal || '').replace(/<br>/g, ' ').replace(/"/g, '""')}"`
+                ];
+                csvContent += fila.join(",") + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "sesiones_canciones.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function verConversacion(historial) {
+            let ventana = window.open("", "_blank", "width=550,height=700");
+            ventana.document.write(`
+                <html>
+                <head><title>Historial de Conversación</title><script src="https://cdn.tailwindcss.com"><\/script></head>
+                <body class="bg-slate-50 p-4 font-sans">
+                    <h2 class="text-lg font-bold text-slate-800 mb-3 border-b pb-2">💬 Historial del Chat</h2>
+                    <div class="space-y-2">
+            `);
+            
+            if (historial && historial.length) {
+                historial.forEach(h => {
+                    const esUser = h.remitente === 'user';
+                    ventana.document.write(`
+                        <div class="flex ${esUser ? 'justify-end' : 'justify-start'}">
+                            <div class="max-w-xs rounded-xl px-3 py-2 text-xs ${esUser ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-800'}">
+                                <strong>${esUser ? 'Cliente' : 'Asistente'}:</strong><br>${h.mensaje}
+                            </div>
+                        </div>
+                    `);
+                });
+            } else {
+                ventana.document.write("<p class='text-sm text-slate-500'>No hay mensajes registrados.</p>");
+            }
+
+            ventana.document.write(`</div></body></html>`);
+            ventana.document.close();
         }
     </script>
 </body>
