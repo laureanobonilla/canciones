@@ -32,7 +32,7 @@
         const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
         let currentBinId = null; 
 
-        // Tu configuración original intacta
+        // Configuración exacta y original de tu versión funcional
         const G_API_KEY = "AQ.Ab8RN6LNp2U7oJDbGzaadSAMkqBZBjjXUP-mj8OWTDNVpo3Jcw";
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${G_API_KEY}`;
 
@@ -58,7 +58,7 @@ Sigue estrictamente este orden conversacional:
 2. Dinámica obligatoria: Tras su respuesta, preséntale la información de los 3 pasos, la inversión de ¢9,900 colones y la garantía de riesgo cero. Luego pregunta: ¿Tienes un texto completo para la canción o prefieres que armemos la letra juntos a partir de las ideas e historia que nos cuentes?
 3. Manejo de la letra o ideas: Si da ideas o cuenta su historia, agradécele reconociendo el detalle y pregúntale si desea agregar algo más.
 4. Armado y revisión de letra: Cuando indique que terminó, preséntale una propuesta formal estructurada con etiquetas <b>[Verso 1]</b>, <b>[Coro]</b>, etc., y pregúntale si está satisfecho o desea cambios hasta que la apruebe.
-5. Estilo musical: Una vez aprobada la letra, pregúntale por el ritmo usando exactamente esta indicación: "por ejemplo cumbia, merengue, rock, pop, religiosa, etc., el que gustes".
+5. Estilo musical: Una vez aprobada la letra, pregúntale por el ritmo usando exactamente esta indicación: "por ejemplo cumbia, merengue, rock, pop, religiosa, etc, el que gustes".
 6. Cierre y Datos: Pídele amablemente su <b>nombre</b> y su número de <b>teléfono</b>. Cuando te los proporcione, emite tu mensaje de agradecimiento y confirmación de que se le enviará la muestra.`;
 
         let geminiHistory = [];
@@ -88,7 +88,7 @@ Sigue estrictamente este orden conversacional:
             sincronizarConJSONBin();
         }
 
-        // Función para mostrar los botones de opción rápida de manera limpia
+        // Función para mostrar los botones de opción rápida (con opción "Otro")
         function mostrarOpcionesRapidas(opciones) {
             const div = document.createElement('div');
             div.id = "quick-replies";
@@ -185,7 +185,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
             const saludoInicial = "¡Hola! 👋🎵<br><br>Para ayudarte mejor, ¿la canción es para alguna ocasión especial (un cumpleaños, aniversario, regalo) o es un proyecto propio?";
             appendMessage('bot', saludoInicial);
             
-            // Inyectamos los botones de opción rápida manteniendo intacta la lógica original
+            // Inyectamos los botones rompe-hielos al cargar
             mostrarOpcionesRapidas([
                 "🎂 Es para un cumpleaños",
                 "❤️ Es un regalo de aniversario",
