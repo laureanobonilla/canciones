@@ -60,7 +60,7 @@
         const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
         let currentBinId = null; 
 
-        // Llave funcional y directa de Gemini
+        // Configuración exacta que utilizaba la versión funcional de Gemini
         const G_API_KEY = "AQ.Ab8RN6LNp2U7oJDbGzaadSAMkqBZBjjXUP-mj8OWTDNVpo3Jcw";
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${G_API_KEY}`;
 
@@ -222,6 +222,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
             const saludoInicial = "¡Hola! 👋🎵<br><br>Bienvenido a nuestro estudio de canciones personalizadas. Para ayudarte mejor, ¿la canción es para alguna ocasión especial o es un proyecto propio?";
             appendMessage('bot', saludoInicial);
             
+            // Botones rompe-hielos interactivos con la opción "Otro"
             mostrarOpcionesRapidas([
                 "🎂 Es para un cumpleaños",
                 "❤️ Es un regalo de aniversario",
@@ -249,6 +250,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
             const quickDiv = document.getElementById('quick-replies');
             if (quickDiv) quickDiv.remove();
 
+            // Lógica intacta: crea el bin de sesión en JSONBin únicamente al enviar el primer mensaje real
             if (!currentBinId) {
                 await crearBinIndependienteYActualizarIndice();
             }
@@ -280,6 +282,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             try {
+                // Estructura exacta y funcional del request a Gemini
                 const response = await fetch(GEMINI_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
