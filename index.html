@@ -3,24 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crea tu Canción Personalizada</title>
+    <title>Tu Canción Personalizada</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body { height: 100dvh; overflow: hidden; background-color: #0f172a; }
+        #chat-container { scroll-behavior: smooth; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
 </head>
-<body class="bg-slate-50 h-[100dvh] flex flex-col overflow-hidden">
-    <header class="bg-indigo-900 text-white p-3 flex justify-between items-center shadow-md">
-        <h1 class="text-lg font-bold">🎶 Tu Canción Personalizada</h1>
-        <a href="admin.html" class="text-xs text-indigo-200 hover:text-white underline">Panel Admin</a>
+<body class="h-[100dvh] flex flex-col justify-between overflow-hidden font-sans text-slate-100">
+
+    <!-- Header Estilizado y Moderno en Modo Oscuro -->
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center shadow-lg z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-xl shadow-inner">🎶</div>
+            <div>
+                <h1 class="text-base font-bold tracking-tight text-white">Tu Canción Personalizada</h1>
+                <p class="text-xs text-emerald-400 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Asistente creativo en línea
+                </p>
+            </div>
+        </div>
+        <a href="admin.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl border border-slate-700 transition">Panel Admin</a>
     </header>
 
-    <main id="chat-container" class="flex-1 overflow-y-auto p-4 max-w-xl w-full mx-auto space-y-3">
+    <!-- Contenedor del Chat con respiro visual y amplitud -->
+    <main id="chat-container" class="flex-1 overflow-y-auto px-4 md:px-6 py-6 max-w-2xl w-full mx-auto space-y-4 pb-28">
         <!-- Los mensajes se inyectan aquí -->
     </main>
 
-    <footer id="chat-footer" class="bg-white border-t p-3 max-w-xl w-full mx-auto">
-        <form id="chat-form" class="flex gap-2">
-            <input type="text" id="user-input" placeholder="Escribe aquí..." class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" autocomplete="off" required>
-            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">Enviar</button>
-        </form>
+    <!-- Campo de texto flotante, amplio, destacado y en modo oscuro -->
+    <footer id="chat-footer" class="absolute bottom-4 left-0 right-0 px-4 z-20">
+        <div class="max-w-2xl w-full mx-auto">
+            <form id="chat-form" class="flex items-center gap-3 bg-slate-900/95 border-2 border-indigo-500/50 rounded-2xl px-4 py-3.5 shadow-2xl backdrop-blur-lg focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/20 transition-all">
+                <input type="text" id="user-input" placeholder="💬 Escribe aquí tu respuesta o cuéntame tu idea..." class="flex-1 bg-transparent border-none text-slate-100 placeholder-slate-400 text-sm md:text-base focus:outline-none" autocomplete="off" required>
+                <button type="submit" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-indigo-500 transition shadow-md flex items-center gap-1.5 cursor-pointer">
+                    <span>Enviar</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
+            </form>
+        </div>
     </footer>
 
     <script>
@@ -31,10 +59,6 @@
 
         const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
         let currentBinId = null; 
-
-        // Configuración exacta y original de tu versión funcional
-        const G_API_KEY = "AQ.Ab8RN6LNp2U7oJDbGzaadSAMkqBZBjjXUP-mj8OWTDNVpo3Jcw";
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${G_API_KEY}`;
 
         let sessionState = {
             appTag: "TortillasAGranelCanciones",
@@ -58,11 +82,12 @@ Sigue estrictamente este orden conversacional:
 2. Dinámica obligatoria: Tras su respuesta, preséntale la información de los 3 pasos, la inversión de ¢9,900 colones y la garantía de riesgo cero. Luego pregunta: ¿Tienes un texto completo para la canción o prefieres que armemos la letra juntos a partir de las ideas e historia que nos cuentes?
 3. Manejo de la letra o ideas: Si da ideas o cuenta su historia, agradécele reconociendo el detalle y pregúntale si desea agregar algo más.
 4. Armado y revisión de letra: Cuando indique que terminó, preséntale una propuesta formal estructurada con etiquetas <b>[Verso 1]</b>, <b>[Coro]</b>, etc., y pregúntale si está satisfecho o desea cambios hasta que la apruebe.
-5. Estilo musical: Una vez aprobada la letra, pregúntale por el ritmo usando exactamente esta indicación: "por ejemplo cumbia, merengue, rock, pop, religiosa, etc, el que gustes".
+5. Estilo musical: Una vez aprobada la letra, pregúntale por el ritmo usando exactamente esta indicación: "por ejemplo cumbia, merengue, rock, pop, religiosa, etc., el que gustes".
 6. Cierre y Datos: Pídele amablemente su <b>nombre</b> y su número de <b>teléfono</b>. Cuando te los proporcione, emite tu mensaje de agradecimiento y confirmación de que se le enviará la muestra.`;
 
         let geminiHistory = [];
 
+        // Función puente segura para JSONBin y Gemini
         async function llamarBackend(action, binId = null, data = null, binName = null) {
             try {
                 const response = await fetch('/.netlify/functions/api', {
@@ -72,15 +97,39 @@ Sigue estrictamente este orden conversacional:
                 });
                 return await response.json();
             } catch (e) {
-                console.error("Error en comunicación segura:", e);
+                console.error("Error en comunicación segura con JSONBin:", e);
+                return null;
+            }
+        }
+
+        async function llamarGeminiSeguro(contents) {
+            try {
+                const response = await fetch('/.netlify/functions/generate-song', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents })
+                });
+                return await response.json();
+            } catch (e) {
+                console.error("Error en comunicación segura con Gemini:", e);
                 return null;
             }
         }
 
         function appendMessage(sender, htmlText) {
             const div = document.createElement('div');
-            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-            div.innerHTML = `<div class="max-w-xs md:max-w-sm rounded-2xl px-3.5 py-2 text-sm ${sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-200 text-slate-800 rounded-bl-none'}">${htmlText}</div>`;
+            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            
+            const isUser = sender === 'user';
+            div.innerHTML = `
+                <div class="max-w-md md:max-w-lg rounded-3xl px-5 py-4 text-sm md:text-base leading-relaxed shadow-lg ${
+                    isUser 
+                    ? 'bg-indigo-600 text-white rounded-br-sm shadow-indigo-600/20' 
+                    : 'bg-slate-800 border border-slate-700 text-slate-100 rounded-bl-sm shadow-slate-900/50'
+                }">
+                    ${htmlText}
+                </div>
+            `;
             chatContainer.appendChild(div);
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
@@ -88,16 +137,15 @@ Sigue estrictamente este orden conversacional:
             sincronizarConJSONBin();
         }
 
-        // Función para mostrar los botones de opción rápida (con opción "Otro")
         function mostrarOpcionesRapidas(opciones) {
             const div = document.createElement('div');
             div.id = "quick-replies";
-            div.className = "flex flex-wrap gap-2 my-2 justify-start";
+            div.className = "flex flex-wrap gap-2.5 my-3 justify-start animate-fade-in pl-1";
             
             opciones.forEach(opcion => {
                 const btn = document.createElement('button');
                 btn.type = "button";
-                btn.className = "bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-3 py-1.5 rounded-full hover:bg-indigo-600 hover:text-white transition font-medium shadow-sm cursor-pointer";
+                btn.className = "bg-indigo-950 text-indigo-200 border border-indigo-800 text-xs md:text-sm px-4 py-2.5 rounded-2xl hover:bg-indigo-600 hover:text-white transition font-medium shadow-md cursor-pointer";
                 btn.innerText = opcion;
                 btn.onclick = () => {
                     const quickDiv = document.getElementById('quick-replies');
@@ -155,15 +203,8 @@ Historial:
 ${JSON.stringify(sessionState.historialConversacion)}`;
 
             try {
-                const response = await fetch(GEMINI_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{ role: "user", parts: [{ text: promptExtraccion }] }]
-                    })
-                });
-                const data = await response.json();
-                if (data.candidates && data.candidates[0].content) {
+                const data = await llamarGeminiSeguro([{ role: "user", parts: [{ text: promptExtraccion }] }]);
+                if (data && data.candidates && data.candidates[0].content) {
                     let textoRespuesta = data.candidates[0].content.parts[0].text;
                     textoRespuesta = textoRespuesta.replace(/```json/g, '').replace(/```/g, '').trim();
                     const datosExtraidos = JSON.parse(textoRespuesta);
@@ -182,17 +223,16 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
         }
 
         window.addEventListener('load', async () => {
-            const saludoInicial = "¡Hola! 👋🎵<br><br>Para ayudarte mejor, ¿la canción es para alguna ocasión especial (un cumpleaños, aniversario, regalo) o es un proyecto propio?";
+            const saludoInicial = "¡Hola! 👋🎵<br><br>Bienvenido a nuestro estudio de canciones personalizadas. Para ayudarte mejor, ¿la canción es para alguna ocasión especial o es un proyecto propio?";
             appendMessage('bot', saludoInicial);
             
-            // Inyectamos los botones rompe-hielos al cargar
             mostrarOpcionesRapidas([
                 "🎂 Es para un cumpleaños",
                 "❤️ Es un regalo de aniversario",
                 "🎸 Es un proyecto musical",
                 "💬 Otro (escribir mi caso)"
             ]);
-            
+
             geminiHistory.push({
                 role: "user",
                 parts: [{ text: "Instrucción del Sistema: " + SYSTEM_PROMPT + "\n\nInicia la conversación saludando al usuario." }]
@@ -238,22 +278,16 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
             const typingId = 'typing-' + Date.now();
             const typingDiv = document.createElement('div');
             typingDiv.id = typingId;
-            typingDiv.className = "flex justify-start";
-            typingDiv.innerHTML = `<div class="bg-slate-200 text-slate-500 rounded-2xl px-3.5 py-2 text-xs italic">Escribiendo...</div>`;
+            typingDiv.className = "flex justify-start animate-fade-in";
+            typingDiv.innerHTML = `<div class="bg-slate-800 border border-slate-700 text-slate-400 rounded-2xl px-4 py-3 text-xs italic shadow-sm">El asistente está escribiendo...</div>`;
             chatContainer.appendChild(typingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             try {
-                const response = await fetch(GEMINI_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: geminiHistory })
-                });
-
-                const data = await response.json();
+                const data = await llamarGeminiSeguro(geminiHistory);
                 document.getElementById(typingId).remove();
 
-                if (data.candidates && data.candidates[0].content) {
+                if (data && data.candidates && data.candidates[0].content) {
                     let respuestaTexto = data.candidates[0].content.parts[0].text;
                     respuestaTexto = respuestaTexto.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                     respuestaTexto = respuestaTexto.replace(/\n/g, '<br>');
@@ -269,7 +303,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
                         faseActual = 'FINALIZADO';
                         await extraerDatosEstructuradosYFinalizar();
                         
-                        chatFooter.innerHTML = `<div class="text-center text-xs text-emerald-700 font-bold py-2">✅ Solicitud enviada correctamente. ¡Muchas gracias!</div>`;
+                        document.querySelector('footer').innerHTML = `<div class="max-w-2xl w-full mx-auto bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-4 text-center text-xs md:text-sm text-emerald-400 font-semibold shadow-2xl">✅ Solicitud enviada correctamente. ¡Muchas gracias! Nos pondremos en contacto pronto.</div>`;
                         setTimeout(() => {
                             alert("¡Solicitud enviada con éxito! Nos pondremos en contacto contigo pronto.");
                         }, 400);
