@@ -6,7 +6,7 @@
     <title>Crea tu Canción Personalizada</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 h-screen flex flex-col justify-between">
+<body class="bg-slate-50 h-[100dvh] flex flex-col overflow-hidden">
     <header class="bg-indigo-900 text-white p-3 flex justify-between items-center shadow-md">
         <h1 class="text-lg font-bold">🎶 Tu Canción Personalizada</h1>
         <a href="admin.html" class="text-xs text-indigo-200 hover:text-white underline">Panel Admin</a>
@@ -29,11 +29,9 @@
         const userInput = document.getElementById('user-input');
         const chatFooter = document.getElementById('chat-footer');
 
-        // Ya no se requiere la Master Key en el frontend; se gestiona de forma segura en Netlify Functions.
         const JSONBIN_INDICE_ID = "6aab0edbac6210605ad634db"; 
         let currentBinId = null; 
 
-        // La API Key de Gemini se protege en Google Cloud restringiéndola por dominio (HTTP Referrer)
         const G_API_KEY = "__CLAVE_GEMINI__";
         const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${G_API_KEY}`;
 
@@ -64,7 +62,6 @@ Sigue estrictamente este orden conversacional:
 
         let geminiHistory = [];
 
-        // Función puente segura hacia Netlify Functions
         async function llamarBackend(action, binId = null, data = null, binName = null) {
             try {
                 const response = await fetch('/.netlify/functions/api', {
@@ -92,16 +89,13 @@ Sigue estrictamente este orden conversacional:
 
         async function crearBinIndependienteYActualizarIndice() {
             try {
-                // 1. Crear Bin exclusivo de sesión mediante la función segura
                 const resCreate = await llamarBackend('create', null, sessionState, sessionState.sessionId);
                 if (resCreate && resCreate.metadata && resCreate.metadata.id) {
                     currentBinId = resCreate.metadata.id;
 
-                    // 2. Leer el índice central
                     const resIndiceGet = await llamarBackend('get', JSONBIN_INDICE_ID);
                     let listaSessiones = resIndiceGet.record?.sessiones || [];
                     
-                    // 3. Actualizar el índice central de forma segura
                     if (!listaSessiones.includes(currentBinId)) {
                         listaSessiones.push(currentBinId);
                         await llamarBackend('update', JSONBIN_INDICE_ID, { sessiones: listaSessiones });
@@ -157,8 +151,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
         }
 
         window.addEventListener('load', async () => {
-            await crearBinIndependienteYActualizarIndice();
-
+            // Ya no se crea el bin al cargar la página para evitar registros basura de bots
             const saludoInicial = "¡Hola! 👋🎵<br><br>Para ayudarte mejor, ¿la canción es para alguna ocasión especial (un cumpleaños, aniversario, regalo) o es un proyecto propio?";
             appendMessage('bot', saludoInicial);
             
@@ -178,6 +171,11 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
 
             const text = userInput.value.trim();
             if (!text) return;
+
+            // Si es el primer mensaje real del usuario, creamos el Bin en este momento
+            if (!currentBinId) {
+                await crearBinIndependienteYActualizarIndice();
+            }
 
             appendMessage('user', text);
             userInput.value = '';
