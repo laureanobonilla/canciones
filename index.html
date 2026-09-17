@@ -6,7 +6,6 @@
     <title>Tu Canción Personalizada</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Suavizar scroll y animaciones */
         html, body { height: 100%; overflow: hidden; }
         #chat-container { scroll-behavior: smooth; }
         @keyframes fadeIn {
@@ -32,21 +31,24 @@
         <a href="admin.html" class="text-xs bg-slate-800 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-700 transition">Admin</a>
     </header>
 
-    <!-- Contenedor Principal del Chat -->
-    <main id="chat-container" class="flex-1 overflow-y-auto px-4 py-6 max-w-2xl w-full mx-auto space-y-4">
+    <!-- Contenedor Principal del Chat (con espacio inferior para que no tape el footer flotante) -->
+    <main id="chat-container" class="flex-1 overflow-y-auto px-4 py-6 max-w-2xl w-full mx-auto space-y-4 pb-24">
         <!-- Los mensajes se inyectan aquí dinámicamente -->
     </main>
 
-    <!-- Barra de Entrada de Mensajes Moderna y Amplia -->
-    <footer class="bg-slate-900/90 backdrop-blur-md border-t border-slate-800 p-4 max-w-2xl w-full mx-auto shadow-2xl z-10">
-        <form id="chat-form" class="flex items-center gap-3 bg-slate-800/90 border border-slate-700 rounded-2xl px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500 transition shadow-inner">
-            <input type="text" id="user-input" placeholder="Escribe tu mensaje o idea aquí..." class="flex-1 bg-transparent border-none text-slate-100 placeholder-slate-400 text-sm focus:outline-none py-2" autocomplete="off" required>
-            <button type="submit" class="bg-indigo-600 text-white p-2.5 rounded-xl hover:bg-indigo-500 transition shadow-md flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-            </button>
-        </form>
+    <!-- Barra de Entrada Flotante y Muy Visible -->
+    <footer class="absolute bottom-4 left-0 right-0 px-4 z-20">
+        <div class="max-w-2xl w-full mx-auto">
+            <form id="chat-form" class="flex items-center gap-3 bg-slate-800/95 border-2 border-indigo-500/50 rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-lg focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/20 transition-all">
+                <input type="text" id="user-input" placeholder="💬 Escribe aquí tu respuesta o idea..." class="flex-1 bg-transparent border-none text-slate-100 placeholder-slate-400 text-sm focus:outline-none" autocomplete="off" required>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl hover:bg-indigo-500 transition shadow-md flex items-center gap-1.5 font-medium text-xs tracking-wide">
+                    <span>Enviar</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
+            </form>
+        </div>
     </footer>
 
     <script>
@@ -216,7 +218,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
         window.addEventListener('load', async () => {
             await crearBinIndependienteYActualizarIndice();
 
-            const saludoInicial = "¡Hola! 👋🎵<br><br>Bienvenido a nuestro estudio de canciones personalizadas. Para empezar a darle forma a tu idea, cuéntame: ¿La canción es para alguna ocasión especial o es un proyecto propio?";
+            const saludoInicial = "¡Hola! 👋🎵<br><br>Bienvenido a nuestro estudio de canciones personalizadas. Para empezar a darle forma à tu idea, cuéntame: ¿La canción es para alguna ocasión especial o es un proyecto propio?";
             appendMessage('bot', saludoInicial);
             
             mostrarOpcionesRapidas([
@@ -298,7 +300,7 @@ ${JSON.stringify(sessionState.historialConversacion)}`;
                         faseActual = 'FINALIZADO';
                         await extraerDatosEstructuradosYFinalizar();
                         
-                        chatFooter.innerHTML = `<div class="text-center text-xs text-emerald-400 font-semibold py-2">✅ Solicitud enviada correctamente. ¡Muchas gracias!</div>`;
+                        document.querySelector('footer').innerHTML = `<div class="bg-slate-800/95 border border-emerald-500/50 rounded-2xl p-3 text-center text-xs text-emerald-400 font-semibold shadow-2xl">✅ Solicitud enviada correctamente. ¡Muchas gracias!</div>`;
                         setTimeout(() => {
                             alert("¡Solicitud enviada con éxito! Nos pondremos en contacto contigo pronto.");
                         }, 400);
